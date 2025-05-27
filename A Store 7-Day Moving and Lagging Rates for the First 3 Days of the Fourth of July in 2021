@@ -1,0 +1,48 @@
+with
+    a1 as (
+        select
+            date (ov.event_time) as dt,
+            p.product_id as z_p
+        from
+            tb_product_info as p
+            join tb_order_overall as ov
+        where
+            shop_id = '901'
+            and p.release_time <= ov.event_time
+            and date (ov.event_time) between '2021-10-01' and '2021-10-03'
+    ),
+    a2 as (
+        select
+            od.product_id,
+            date (ov.event_time) as ddt
+        from
+            tb_order_detail as od
+            join tb_product_info as p on p.product_id = od.product_id
+            join tb_order_overall as ov on od.order_id = ov.order_id
+        where
+            p.shop_id = '901'
+            and datediff ('2021-10-03', date (ov.event_time)) between 0 and 8
+    ),
+    a3 as (
+        select
+            dt,
+            round(
+                count(distinct product_id) / count(distinct z_p),
+                3
+            ) as sale_rate,
+            1 - round(
+                count(distinct product_id) / count(distinct z_p),
+                3
+            ) as unsale_rate
+        from
+            a1
+            left join a2 on datediff (dt, ddt) between 0 and 6
+        group by
+            dt
+    )
+select
+    *
+from
+    a3
+order by
+    dt asc
