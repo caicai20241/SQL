@@ -1,3 +1,6 @@
+# 交易流程的三个关键结点：下单、支付、确认收货。
+# 下单时间为取自订单表的create_time，支付成功时间为取自支付表的callback_time，确认收货时间取自订单流水表的create_time。
+# 如果确认收货时间不为null，说明业务流程结束，将其格式化为yyyy-MM-dd格式，作为分区字段dt的值，否则业务流程未结束，dt取值为9999-12-31。
 # First day loading
 set hive.exec.dynamic.partition.mode=nonstrict; 
 insert overwrite table dwd_trade_trade_flow_acc partition(dt) 
