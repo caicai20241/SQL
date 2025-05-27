@@ -1,4 +1,5 @@
-# Data skewing occurs when aggregating orders for commodity granularity, which is solved with local aggregation and global aggregation
+# 由于某个数值的数量过多导致数据倾斜，采用局部聚合和全局聚合的方式解决；
+# 有知道大数据量的值是哪一个和不知道是哪一个两种方式。
 # When the value of the large data volume is known
 CREATE TEMPORARY TABLE tmp_dws_trade_sku_order_1d_local AS
 SELECT
