@@ -1,3 +1,6 @@
+# 下单事务事实表，业务库的order_info表会新增一条数据，order_detail表新增一至多条数据，
+# 如果参加了活动，order_detail_activity新增一至多条数据，
+# 如果使用了优惠券，order_detail_coupon新增一至多条数据
 # First day loading
 set hive.exec.dynamic.partition.mode=nonstrict; 
 insert overwrite table dwd_trade_order_detail_inc partition (dt) 
