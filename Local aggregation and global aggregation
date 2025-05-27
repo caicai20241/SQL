@@ -1,0 +1,41 @@
+# Data skewing occurs when aggregating orders for commodity granularity, which is solved with local aggregation and global aggregation
+# When the value of the large data volume is known
+CREATE TEMPORARY TABLE tmp_dws_trade_sku_order_1d_local AS
+SELECT
+    CASE WHEN sku_id = 1009 THEN CONCAT('hot_', FLOOR(RAND() * 100)) ELSE CAST(sku_id AS STRING) END AS group_key,
+    COUNT(order_id) AS order_cnt,
+    SUM(payment_amount) AS payment_amount,
+    SUM(discount_amount) AS discount_amount
+FROM dwd_trade_sku_order_detail
+WHERE dt = '${dt}'
+GROUP BY
+    CASE WHEN sku_id = 1009 THEN CONCAT('hot_', FLOOR(RAND() * 100)) ELSE CAST(sku_id AS STRING) END;
+
+INSERT OVERWRITE TABLE dws_trade_sku_order_1d PARTITION(dt='${dt}')
+SELECT
+    CASE WHEN INSTR(group_key, 'hot_') > 0 THEN SUBSTR(group_key, 5) ELSE group_key END AS sku_id,
+    SUM(order_cnt) AS order_count,
+    SUM(payment_amount) AS total_payment,
+    SUM(discount_amount) AS total_discount
+FROM tmp_dws_trade_sku_order_1d_local
+GROUP BY 
+    CASE WHEN INSTR(group_key, 'hot_') > 0 THEN SUBSTR(group_key, 5) ELSE group_key END;
+# When the value of the large data volume is not known
+CREATE TEMPORARY TABLE tmp_dws_trade_sku_order_1d_local AS
+SELECT
+    CONCAT(FLOOR(RAND() * 100), '_', sku_id) AS group_key,
+    COUNT(order_id) AS order_cnt,
+    SUM(payment_amount) AS payment_amount,
+    SUM(discount_amount) AS discount_amount
+FROM dwd_trade_sku_order_detail
+WHERE dt = '${dt}'
+GROUP BY CONCAT(FLOOR(RAND() * 100), '_', sku_id);
+INSERT OVERWRITE TABLE dws_trade_sku_order_1d PARTITION(dt='${dt}')
+SELECT
+    SUBSTR(group_key, INSTR(group_key, '_') + 1) AS sku_id,
+    SUM(order_cnt) AS order_count,
+    SUM(payment_amount) AS total_payment,
+    SUM(discount_amount) AS total_discount
+FROM tmp_dws_trade_sku_order_1d_local
+GROUP BY
+    SUBSTR(group_key, INSTR(group_key, '_') + 1);
